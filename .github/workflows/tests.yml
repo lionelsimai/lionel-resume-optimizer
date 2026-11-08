@@ -1,0 +1,29 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run scorer tests
+        run: python3 tests/test_resume_optimizer.py
+      - name: Scorer smoke test on the bundled example
+        run: python3 scripts/resume_optimizer.py score --resume examples/sample-resume.txt --job examples/sample-job.txt
+      - name: Root and plugin skill copies stay in sync
+        run: |
+          for f in SKILL.md PROMPT.md; do diff -q "$f" "skills/resume-optimizer/$f"; done
+          diff -rq scripts skills/resume-optimizer/scripts -x __pycache__
+          diff -rq references skills/resume-optimizer/references
+          diff -rq templates skills/resume-optimizer/templates
+          diff -rq examples skills/resume-optimizer/examples
